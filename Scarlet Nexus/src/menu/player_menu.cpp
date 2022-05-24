@@ -2,6 +2,7 @@
 #include "imgui.h"
 #include "bot_function.hpp"
 #include "utility/utility.hpp"
+#include "utility/menu_settings.hpp"
 
 namespace ellohim
 {
@@ -29,44 +30,27 @@ namespace ellohim
 
             ImGui::BeginGroup();
 
-            ImGui::Checkbox("Inf Pychic", &infinite_psychic);
-            if (infinite_psychic)
-            {
-                utility::set_player_pychic(1000.f);
-            }
-
-            ImGui::Checkbox("SAS No Cooldown", &no_sas_cooldown);
-            if (no_sas_cooldown)
-                utility::remove_sas_cooldown(no_sas_cooldown);
-
-            if (ImGui::Checkbox("Inf SAS Duration", &infinite_sas_duration))
-                utility::set_infinite_sas_duration(infinite_sas_duration);
+            ImGui::Checkbox("Inf Pychic", &option.infinite_psychic);
+            ImGui::Checkbox("SAS No Cooldown", &option.no_sas_cooldown);
+            ImGui::Checkbox("Inf SAS Duration", &option.infinite_sas_duration);
 
             ImGui::EndGroup();
             ImGui::SameLine(200);
 
             ImGui::BeginGroup();
 
-            ImGui::Checkbox("Inf Brain Dive", &infinite_brain_dive);
-            if (infinite_brain_dive) utility::set_infinite_brain_dive(infinite_brain_dive);
-
-            ImGui::Checkbox("Instant Brain Field", &instant_brain_field);
-            if (instant_brain_field) utility::instant_brain_field(instant_brain_field);
-
-            ImGui::Checkbox("Inf Battle Point", &infinite_battle_point);
-
+            ImGui::Checkbox("Inf Brain Dive", &option.infinite_brain_dive);
+            ImGui::Checkbox("Enter Brain Dive", &option.enter_brain_dive);
+            ImGui::Checkbox("Inf Battle Point", &option.infinite_battle_point);
 
             ImGui::EndGroup();
             ImGui::SameLine(400);
 
             ImGui::BeginGroup();
 
-            if (ImGui::Checkbox("No Item Use Cooldown", &no_items_cooldown))
-                utility::item_usage_no_cooldown(no_items_cooldown);
-
-            ImGui::Checkbox("Inf Items", &infinite_items);
-
-            ImGui::Checkbox("Infinite Credits", &infinite_credits);
+            ImGui::Checkbox("No Item Use Cooldown", &option.no_items_cooldown);
+            ImGui::Checkbox("Instant Brain Field", &option.instant_brain_field);
+            ImGui::Checkbox("Infinite Credits", &option.infinite_credits);
 
             ImGui::EndGroup();
 

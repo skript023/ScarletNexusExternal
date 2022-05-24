@@ -126,29 +126,39 @@ namespace ellohim::utility
 		auto base = getSASStateBase();
 		if (!base) return;
 
-		g_process->write(base + 0xE0, activate);
+		g_process->write(base + 0xE0, static_cast<char>(activate));
 	}
 
 	inline void set_infinite_brain_dive(bool activate)
 	{
-		auto base = getBrainDriveBase();
-
-		if (!base) return;
-
 		if (activate)
+		{
+			auto base = getBrainDriveBase();
+
+			if (!base) return;
 			g_process->write(base + 0x24C, 0.0f);
+		}
 	}
 
 	inline void instant_brain_field(bool activate)
+	{
+		if (activate)
+		{
+			auto base = getBrainDriveBase();
+
+			if (!base) return;
+
+			g_process->write(base + 0x21C, 0.0f);
+		}
+	}
+
+	inline void enter_brain_dive(bool activate)
 	{
 		auto base = getBrainDriveBase();
 
 		if (!base) return;
 
-		if (activate)
-		{
-			g_process->write(base + 0x1A2, true);
-		}
+		g_process->write(base + 0x1A2, activate);
 	}
 
 	inline void item_usage_no_cooldown(bool activate)
@@ -251,6 +261,15 @@ namespace ellohim::utility
 		g_process->write(base + 0x50, credits);
 	}
 
+	inline void infinite_player_credits(bool activate)
+	{
+		static const auto credits = get_player_credits();
+		if (activate)
+		{
+			set_player_credits(credits);
+		}
+	}
+
 	inline int get_player_battle_point()
 	{
 		auto base = getUserParamsBase();
@@ -267,5 +286,14 @@ namespace ellohim::utility
 		if (!base) return;
 
 		g_process->write(base + 0x2D0, battlePoints);
+	}
+
+	inline void get_player_battle_point(bool activate)
+	{
+		static const auto battle_points = get_player_credits();
+		if (activate)
+		{
+			set_player_battle_point(battle_points);
+		}
 	}
 }
