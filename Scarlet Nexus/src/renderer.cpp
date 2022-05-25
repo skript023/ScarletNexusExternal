@@ -13,7 +13,7 @@ namespace ellohim
 	LPCSTR TargetProcess = "ScarletNexus-Win64-Shipping.exe";
 	//bool ShowMenu = true;
 	bool ImGui_Initialised = false;
-	bool CreateConsole = false;
+	bool CreateConsole = true;
 
 	namespace Process
 	{

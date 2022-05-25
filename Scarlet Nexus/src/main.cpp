@@ -9,13 +9,13 @@
 
 inline uint32_t find_game_id() 
 {
-	auto win = ::FindWindowA("SCARLET NEXUS", nullptr);
+	auto win = ellohim::functions::GetProcessId(ellohim::TargetProcess);
 	if (!win) 
 	{
 		LOG(INFO) << "Cannot find game window" << std::endl;
 	}
 
-	return ellohim::functions::GetProcessId(ellohim::TargetProcess);
+	return win;
 }
 
 int main()
