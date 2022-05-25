@@ -133,7 +133,7 @@ namespace ellohim
 		void open_outstreams()
 		{
 			if (m_attach_console)
-				//m_console_out.open("CONOUT$", std::ios_base::out | std::ios_base::app);
+				m_console_out.open("CONOUT$", std::ios_base::out | std::ios_base::app);
 
 			m_file_out.open(m_file.get_path(), std::ios_base::out | std::ios_base::trunc);
 		}
@@ -178,7 +178,7 @@ namespace ellohim
 				out
 					<< "[" << msg.timestamp("%H:%M:%S") << "]"
 					<< AddColorToStream(color)
-					<< "[" << std::setw(7) << msg.level() << "/"
+					<< "[" << msg.level() << "/"
 					<< msg.file() << ":" << msg.line() << "]"
 					<< ResetStreamColor
 					<< ": ";

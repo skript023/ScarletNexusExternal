@@ -60,6 +60,15 @@ int main()
 		}
 	}
 
+	std::cout << R"kek(
+  _____                _      _   _   _                  _______        _                 
+ / ____|              | |    | | | \ | |                |__   __|      (_)                
+| (___   ___ __ _ _ __| | ___| |_|  \| | _____  ___   _ ___| |_ __ __ _ _ _ __   ___ _ __ 
+ \___ \ / __/ _` | '__| |/ _ \ __| . ` |/ _ \ \/ / | | / __| | '__/ _` | | '_ \ / _ \ '__|
+ ____) | (_| (_| | |  | |  __/ |_| |\  |  __/>  <| |_| \__ \ | | | (_| | | | | |  __/ |   
+|_____/ \___\__,_|_|  |_|\___|\__|_| \_|\___/_/\_,\____|___/_|_|  \__,_|_|_| |_|\___|_| 
+ )kek" << std::endl;
+
 	OverlayWindow::Name = "Ellohim Template";//RandomString(10).c_str();
 
 	std::filesystem::path base_dir = std::getenv("appdata");
@@ -77,7 +86,7 @@ int main()
 
 	auto renderer_instance = std::make_unique<renderer>();
 	LOG(INFO) << "Renderer Initialized.";
-	//CreateThread(0, 0, renderer::process_check, 0, 0, 0);
+
 	while (g_running)
 	{
 		renderer::process_check(0);
@@ -86,14 +95,17 @@ int main()
 
 		Sleep(0);
 	}
-	process_instance.reset();
-	LOG(INFO) << "Process initalized.";
-
 	renderer_instance.reset();
 	LOG(INFO) << "Renderer Uninitialized";
 
 	pointers_instance.reset();
-	LOG(INFO) << "Pointers initialized.";
+	LOG(INFO) << "Pointers Uninitialized.";
+
+	process_instance.reset();
+	LOG(INFO) << "Process Uninitalized.";
+
+	logger_instance.reset();
+	file_manager_instance.reset();
 
 	exit(0);
 }
