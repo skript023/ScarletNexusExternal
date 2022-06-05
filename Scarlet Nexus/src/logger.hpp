@@ -2,7 +2,6 @@
 #include "common.hpp"
 #include "file_manager.hpp"
 #include <g3log/g3log.hpp>
-#include <g3log/loglevels.hpp>
 #include <g3log/logworker.hpp>
 
 namespace ellohim
@@ -15,6 +14,12 @@ namespace ellohim
 			+ system_clock::now());
 		return system_clock::to_time_t(sctp);
 	}
+
+	static const int kRawValue = 600;
+
+	const LEVELS
+		RAW_GREEN_TO_CONSOLE{ kRawValue, {"RAW_GREEN_TO_CONSOLE"} },
+		RAW_RED{ kRawValue, {"RAW_RED"} };
 
 	class logger;
 	inline logger* g_log{};
@@ -150,8 +155,13 @@ namespace ellohim
 		{
 			void callback(g3::LogMessageMover log)
 			{
+				g3::LogMessage log_message = log.get();
+				int level_value = log_message._level.value;
+
+				bool is_raw = level_value == RAW_GREEN_TO_CONSOLE.value;
+
 				if (g_log->m_console_out.is_open())
-					g_log->m_console_out << log.get().toString(log_sink::format_console) << std::flush;
+					g_log->m_console_out << log_message.toString(is_raw ? log_sink::format_raw : log_sink::format_console) << std::flush;
 
 				g_log->m_file_out << log.get().toString(log_sink::format_file) << std::flush;
 			}
@@ -166,6 +176,8 @@ namespace ellohim
 					return LogColor::GREEN;
 				case g3::kWarningValue:
 					return LogColor::YELLOW;
+				case kRawValue:
+					return LogColor::GREEN;
 				}
 				return g3::internal::wasFatal(level) ? LogColor::RED : LogColor::WHITE;
 			}
@@ -178,22 +190,29 @@ namespace ellohim
 				out
 					<< "[" << msg.timestamp("%H:%M:%S") << "]"
 					<< AddColorToStream(color)
-					<< "[" << msg.level() << "/"
-					<< msg.file() << ":" << msg.line() << "]"
-					<< ResetStreamColor
+					<< "[" << msg.level() << "]"
+					<< "[" << msg.file() << "]" << "[" << msg.line() << "]"
 					<< ": ";
+
+				return out.str();
+			}
+			static std::string format_raw(const g3::LogMessage& msg)
+			{
+				LogColor color = log_sink::get_color(msg._level);
+				std::stringstream out;
+				out << AddColorToStream(color);
 
 				return out.str();
 			}
 			static std::string format_file(const g3::LogMessage& msg)
 			{
 				LogColor color = log_sink::get_color(msg._level);
-				std::stringstream out;
+				std::stringstream out;//<< std::setw(7) 
 
 				out
 					<< "[" << msg.timestamp("%H:%M:%S") << "]"
-					<< "[" << std::setw(7) << msg.level() << "/"
-					<< msg.file() << ":" << msg.line() << "]"
+					<< "[" << msg.level() << "]"
+					<< "[" << msg.file() << "]" << "[" << msg.line() << "]"
 					<< ": ";
 
 				return out.str();

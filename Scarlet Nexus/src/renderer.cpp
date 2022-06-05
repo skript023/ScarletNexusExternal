@@ -2,7 +2,6 @@
 #include "Overlay.h"
 #include "Functions.h"
 #include "renderer.hpp"
-#include "features.hpp"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 namespace ellohim
@@ -89,7 +88,7 @@ namespace ellohim
 			UpdateWindow(OverlayWindow::Hwnd);
 		}
 		ImGui::EndFrame();
-		features::run_per_tick(); //Features Loop
+		
 		DirectX9Interface::pDevice->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_ARGB(0, 0, 0, 0), 1.0f, 0);
 		if (DirectX9Interface::pDevice->BeginScene() >= 0) {
 			ImGui::Render();
@@ -153,8 +152,8 @@ namespace ellohim
 
 	renderer::renderer()
 	{
-		setup_window();
-
+		renderer::setup_window();
+		renderer::overlay_init();
 		if (FAILED(Direct3DCreate9Ex(D3D_SDK_VERSION, &DirectX9Interface::Direct3D9)))
 		{
 			return;
@@ -281,7 +280,49 @@ namespace ellohim
 		{
 			if (GetProcessId(TargetProcess) == 0)
 			{
-				exit(0);
+				g_running = false;
+			}
+		}
+	}
+
+	void renderer::overlay_init()
+	{
+		if (CreateConsole == false)
+			ShowWindow(GetConsoleWindow(), SW_HIDE);
+
+		bool WindowFocus = false;
+		while (WindowFocus == false)
+		{
+			DWORD ForegroundWindowProcessID;
+			GetWindowThreadProcessId(GetForegroundWindow(), &ForegroundWindowProcessID);
+			if (functions::GetProcessId(TargetProcess) == ForegroundWindowProcessID)
+			{
+				Process::ID = GetCurrentProcessId();
+				Process::Handle = GetCurrentProcess();
+				Process::Hwnd = GetForegroundWindow();
+
+				RECT TempRect;
+				GetWindowRect(Process::Hwnd, &TempRect);
+				Process::WindowWidth = TempRect.right - TempRect.left;
+				Process::WindowHeight = TempRect.bottom - TempRect.top;
+				Process::WindowLeft = TempRect.left;
+				Process::WindowRight = TempRect.right;
+				Process::WindowTop = TempRect.top;
+				Process::WindowBottom = TempRect.bottom;
+
+				char TempTitle[MAX_PATH];
+				GetWindowText(Process::Hwnd, TempTitle, sizeof(TempTitle));
+				Process::Title = TempTitle;
+
+				char TempClassName[MAX_PATH];
+				GetClassName(Process::Hwnd, TempClassName, sizeof(TempClassName));
+				Process::ClassName = TempClassName;
+
+				char TempPath[MAX_PATH];
+				GetModuleFileNameEx(Process::Handle, NULL, TempPath, sizeof(TempPath));
+				Process::Path = TempPath;
+
+				WindowFocus = true;
 			}
 		}
 	}

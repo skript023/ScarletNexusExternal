@@ -1,6 +1,7 @@
 #include "features.hpp"
 #include "utility/utility.hpp"
 #include "utility/menu_settings.hpp"
+#include "script.hpp"
 
 namespace ellohim::features
 {
@@ -22,4 +23,17 @@ namespace ellohim::features
         utility::item_usage_no_cooldown(option.no_items_cooldown);
         utility::infinite_player_credits(option.infinite_credits);
 	}
+
+    void script_func()
+    {
+        while (true)
+        {
+            TRY_CLAUSE
+            {
+                run_per_tick();
+            }
+            EXCEPT_CLAUSE
+            script::get_current()->yield();
+        }
+    }
 }

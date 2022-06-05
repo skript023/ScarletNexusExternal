@@ -18,10 +18,11 @@ namespace ellohim
 		void input_handler();
 		void draw_overlay();
 		void rendering();
-		static bool dx_init();
 		static LRESULT CALLBACK WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
-		void setup_window();
 		static DWORD WINAPI process_check(LPVOID lpParameter);
+	private:
+		void overlay_init();
+		void setup_window();
 	};
 
 	inline renderer* g_renderer{};
