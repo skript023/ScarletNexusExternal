@@ -9,6 +9,9 @@ namespace ellohim
 		m_credits_handle(pattern("Credits Handler", "48 89 ? ? ? 48 89 ? ? ? 48 89 ? ? ? 57 48 83 EC ? 4C 8B ? ? ? ? ? 33 F6")),
 		m_items_handle(pattern("Items Handler", "45 8D ? ? 45 89 ? ? 45 3B"))
 	{
+		auto m_hwnd = FindWindowA("UnrealWindow", nullptr);
+		if (!m_hwnd)
+			throw std::runtime_error("Failed to find the game's window.");
 		g_pointers = this;
 	}
 

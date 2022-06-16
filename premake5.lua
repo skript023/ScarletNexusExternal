@@ -129,8 +129,8 @@ workspace "Scarlet Nexus"
     kind "ConsoleApp"
     language "C++"
 
-    targetdir ("bin/lib/" .. outputdir)
-    objdir ("bin/" .. outputdir .. "/%{prj.name}")
+    targetdir ("bin/" .. outputdir)
+    objdir ("bin/int/" .. outputdir .. "/%{prj.name}")
 
     PrecompiledHeaderInclude = "common.hpp"
     PrecompiledHeaderSource = "%{prj.name}/src/common.cpp"

@@ -26,7 +26,7 @@ namespace ellohim
 {
 	inline std::atomic_bool g_running{ true };
 
-	constexpr inline LPCSTR m_target_process = "explorer.exe";
+	constexpr inline LPCSTR m_target_process = "ScarletNexus-Win64-Shipping.exe";
 	inline bool m_create_console = true;
 
 	namespace window_process

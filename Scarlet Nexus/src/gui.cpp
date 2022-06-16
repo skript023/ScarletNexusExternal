@@ -88,7 +88,7 @@ namespace ellohim
 	void gui::dx_on_tick()
 	{
 		gui::dx_init();
-		if (ImGui::Begin("Wuhan Mod Menu - Madang Hese Udud Hese Teu Boga Duit Wuhan Kontol"))
+		if (ImGui::Begin("Scarlet Nexus Trainer"))
 		{
 			ImGui::BeginTabBar("Tab Menu");
 			player_menu::render_player_tab();

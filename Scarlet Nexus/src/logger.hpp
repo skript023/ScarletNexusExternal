@@ -163,7 +163,8 @@ namespace ellohim
 				if (g_log->m_console_out.is_open())
 					g_log->m_console_out << log_message.toString(is_raw ? log_sink::format_raw : log_sink::format_console) << std::flush;
 
-				g_log->m_file_out << log.get().toString(log_sink::format_file) << std::flush;
+				if (!is_raw)
+					g_log->m_file_out << log.get().toString(log_sink::format_file) << std::flush;
 			}
 
 			static LogColor get_color(const LEVELS level)
