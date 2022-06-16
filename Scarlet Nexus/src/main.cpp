@@ -9,11 +9,9 @@
 #include "script_mgr.hpp"
 #include "features.hpp"
 
-//int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
-
 inline uint32_t find_game_id() 
 {
-	auto win = ellohim::functions::GetProcessId(ellohim::TargetProcess);
+	auto win = ellohim::functions::GetProcessId(ellohim::m_target_process);
 	if (!win) 
 	{
 		LOG(INFO) << "Cannot find game window";
@@ -26,7 +24,7 @@ int main()
 {
 	using namespace ellohim;
 
-	OverlayWindow::Name = "Ellohim Scarlet Nexus";//RandomString(10).c_str();
+	overlay_window::m_name = "Ellohim Scarlet Nexus";
 
 	std::filesystem::path base_dir = std::getenv("appdata");
 	base_dir /= "Ellohim Menu";
@@ -34,7 +32,7 @@ int main()
 	auto file_manager_instance = std::make_unique<file_manager>(base_dir);
 
 	auto logger_instance = std::make_unique<logger>(
-		OverlayWindow::Name,
+		overlay_window::m_name,
 		file_manager_instance->get_project_file("./Scarlet Nexus.log"));
 	
 	LOG(RAW_GREEN_TO_CONSOLE) << R"kek(
@@ -64,17 +62,10 @@ int main()
 	g_script_mgr.add_script(std::make_unique<script>(&features::script_func));
 	LOG(INFO) << "Scripts registered.";
 
-	while (g_running)
+	while (g_running && g_process->is_running())
 	{
 		g_script_mgr.tick();
-		if (g_process->is_running())
-		{
-			g_renderer->rendering();
-		}
-		else
-		{
-			g_running = false;
-		}
+		g_renderer->render_on_tick();
 
 		Sleep(0);
 	}

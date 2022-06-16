@@ -2,50 +2,16 @@
 #include "Overlay.h"
 #include "Functions.h"
 #include "renderer.hpp"
+#include "pointers.hpp"
+#include "features.hpp"
+#include "fonts/font_list.hpp"
+#include "script.hpp"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 namespace ellohim
 {
 	using namespace overlay;
 	using namespace functions;
-
-	LPCSTR TargetProcess = "ScarletNexus-Win64-Shipping.exe";
-	//bool ShowMenu = true;
-	bool ImGui_Initialised = false;
-	bool CreateConsole = true;
-
-	namespace Process
-	{
-		DWORD ID;
-		HANDLE Handle;
-		HWND Hwnd;
-		WNDPROC WndProc;
-		int WindowWidth;
-		int WindowHeight;
-		int WindowLeft;
-		int WindowRight;
-		int WindowTop;
-		int WindowBottom;
-		LPCSTR Title;
-		LPCSTR ClassName;
-		LPCSTR Path;
-	}
-
-	namespace OverlayWindow
-	{
-		WNDCLASSEX WindowClass;
-		HWND Hwnd;
-		LPCSTR Name;
-	}
-
-	namespace DirectX9Interface
-	{
-		IDirect3D9Ex* Direct3D9 = NULL;
-		IDirect3DDevice9Ex* pDevice = NULL;
-		D3DPRESENT_PARAMETERS pParams = { NULL };
-		MARGINS Margin = { -1 };
-		MSG Message = { NULL };
-	}
 
 	void renderer::input_handler()
 	{
@@ -59,11 +25,11 @@ namespace ellohim
 	{
 		char FpsInfo[64];
 		sprintf(FpsInfo, "Overlay FPS: %0.f", ImGui::GetIO().Framerate);
-		RGBA White = { 255,255,255,255 };
-		DrawStrokeText(30, 44, &White, FpsInfo);
+		RGBA White = { 255.f,255.f,255.f,255.f };
+		DrawStrokeText(30.f, 44.f, &White, FpsInfo);
 	}
 
-	void renderer::render_gui()
+	void renderer::on_present()
 	{
 		if (GetAsyncKeyState(VK_INSERT) & 1) g_gui.m_opened = !g_gui.m_opened;
 		ImGui_ImplDX9_NewFrame();
@@ -76,51 +42,53 @@ namespace ellohim
 		{
 			input_handler();
 
-			ellohim::g_gui.dx_on_tick();
+			g_gui.dx_on_tick();
 
-			SetWindowLong(OverlayWindow::Hwnd, GWL_EXSTYLE, WS_EX_TOOLWINDOW);
-			UpdateWindow(OverlayWindow::Hwnd);
-			SetFocus(OverlayWindow::Hwnd);
+			SetWindowLong(overlay_window::m_hwnd, GWL_EXSTYLE, WS_EX_TOOLWINDOW);
+			UpdateWindow(overlay_window::m_hwnd);
+			SetFocus(overlay_window::m_hwnd);
 		}
-		else 
+		else
 		{
-			SetWindowLong(OverlayWindow::Hwnd, GWL_EXSTYLE, WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW);
-			UpdateWindow(OverlayWindow::Hwnd);
+			SetWindowLong(overlay_window::m_hwnd, GWL_EXSTYLE, WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW);
+			UpdateWindow(overlay_window::m_hwnd);
 		}
 		ImGui::EndFrame();
-		
-		DirectX9Interface::pDevice->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_ARGB(0, 0, 0, 0), 1.0f, 0);
-		if (DirectX9Interface::pDevice->BeginScene() >= 0) {
+
+		d3d9::m_d3d_device->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_ARGB(0, 0, 0, 0), 1.0f, 0);
+		if (d3d9::m_d3d_device->BeginScene() >= 0)
+		{
 			ImGui::Render();
-			ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());	
-			DirectX9Interface::pDevice->EndScene();
+			ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+			d3d9::m_d3d_device->EndScene();
 		}
 
-		HRESULT result = DirectX9Interface::pDevice->Present(NULL, NULL, NULL, NULL);
-		if (result == D3DERR_DEVICELOST && DirectX9Interface::pDevice->TestCooperativeLevel() == D3DERR_DEVICENOTRESET)
+		HRESULT result = d3d9::m_d3d_device->Present(NULL, NULL, NULL, NULL);
+		if (result == D3DERR_DEVICELOST && d3d9::m_d3d_device->TestCooperativeLevel() == D3DERR_DEVICENOTRESET)
 		{
 			ImGui_ImplDX9_InvalidateDeviceObjects();
-			DirectX9Interface::pDevice->Reset(&DirectX9Interface::pParams);
+			d3d9::m_d3d_device->Reset(&d3d9::m_d3d_params);
 			ImGui_ImplDX9_CreateDeviceObjects();
 		}
 	}
 
-	void renderer::rendering()
+	void renderer::render_on_tick()
 	{
 		static RECT OldRect;
-		ZeroMemory(&DirectX9Interface::Message, sizeof(MSG));
+		ZeroMemory(&d3d9::m_d3d_message, sizeof(MSG));
 
-		if (DirectX9Interface::Message.message != WM_QUIT)
+		if (d3d9::m_d3d_message.message != WM_QUIT)
 		{
-			if (PeekMessage(&DirectX9Interface::Message, OverlayWindow::Hwnd, 0, 0, PM_REMOVE)) {
-				TranslateMessage(&DirectX9Interface::Message);
-				DispatchMessage(&DirectX9Interface::Message);
+			if (PeekMessage(&d3d9::m_d3d_message, overlay_window::m_hwnd, 0, 0, PM_REMOVE))
+			{
+				TranslateMessage(&d3d9::m_d3d_message);
+				DispatchMessage(&d3d9::m_d3d_message);
 			}
 			HWND ForegroundWindow = GetForegroundWindow();
-			if (ForegroundWindow == Process::Hwnd)
+			if (ForegroundWindow == window_process::m_hwnd)
 			{
 				HWND TempProcessHwnd = GetWindow(ForegroundWindow, GW_HWNDPREV);
-				SetWindowPos(OverlayWindow::Hwnd, TempProcessHwnd, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+				SetWindowPos(overlay_window::m_hwnd, TempProcessHwnd, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 			}
 
 			RECT TempRect;
@@ -128,33 +96,34 @@ namespace ellohim
 			ZeroMemory(&TempRect, sizeof(RECT));
 			ZeroMemory(&TempPoint, sizeof(POINT));
 
-			GetClientRect(Process::Hwnd, &TempRect);
-			ClientToScreen(Process::Hwnd, &TempPoint);
+			GetClientRect(window_process::m_hwnd, &TempRect);
+			ClientToScreen(window_process::m_hwnd, &TempPoint);
 
 			TempRect.left = TempPoint.x;
 			TempRect.top = TempPoint.y;
 			ImGuiIO& io = ImGui::GetIO();
-			io.ImeWindowHandle = Process::Hwnd;
+			io.ImeWindowHandle = window_process::m_hwnd;
 
 			if (TempRect.left != OldRect.left || TempRect.right != OldRect.right || TempRect.top != OldRect.top || TempRect.bottom != OldRect.bottom)
 			{
 				OldRect = TempRect;
-				Process::WindowWidth = TempRect.right;
-				Process::WindowHeight = TempRect.bottom;
-				DirectX9Interface::pParams.BackBufferWidth = Process::WindowWidth;
-				DirectX9Interface::pParams.BackBufferHeight = Process::WindowHeight;
-				SetWindowPos(OverlayWindow::Hwnd, (HWND)0, TempPoint.x, TempPoint.y, Process::WindowWidth, Process::WindowHeight, SWP_NOREDRAW);
-				DirectX9Interface::pDevice->Reset(&DirectX9Interface::pParams);
+				window_process::m_screen_resolution.x = TempRect.right;
+				window_process::m_screen_resolution.y = TempRect.bottom;
+				d3d9::m_d3d_params.BackBufferWidth = window_process::m_screen_resolution.x;
+				d3d9::m_d3d_params.BackBufferHeight = window_process::m_screen_resolution.y;
+				SetWindowPos(overlay_window::m_hwnd, (HWND)0, TempPoint.x, TempPoint.y, window_process::m_screen_resolution.x, window_process::m_screen_resolution.y, SWP_NOREDRAW);
+				d3d9::m_d3d_device->Reset(&d3d9::m_d3d_params);
 			}
-			render_gui();
+			on_present();
 		}
 	}
 
 	renderer::renderer()
 	{
-		renderer::setup_window();
-		renderer::overlay_init();
-		if (FAILED(Direct3DCreate9Ex(D3D_SDK_VERSION, &DirectX9Interface::Direct3D9)))
+		init_overlay();
+		setup_window();
+
+		if (FAILED(Direct3DCreate9Ex(D3D_SDK_VERSION, &d3d9::m_d3d_context)))
 		{
 			return;
 		}
@@ -162,20 +131,20 @@ namespace ellohim
 		D3DPRESENT_PARAMETERS Params = { 0 };
 		Params.Windowed = TRUE;
 		Params.SwapEffect = D3DSWAPEFFECT_DISCARD;
-		Params.hDeviceWindow = OverlayWindow::Hwnd;
+		Params.hDeviceWindow = overlay_window::m_hwnd;
 		Params.MultiSampleQuality = D3DMULTISAMPLE_NONE;
 		Params.BackBufferFormat = D3DFMT_A8R8G8B8;
-		Params.BackBufferWidth = Process::WindowWidth;
-		Params.BackBufferHeight = Process::WindowHeight;
+		Params.BackBufferWidth = window_process::m_screen_resolution.x;
+		Params.BackBufferHeight = window_process::m_screen_resolution.y;
 		Params.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
 		Params.EnableAutoDepthStencil = TRUE;
 		Params.AutoDepthStencilFormat = D3DFMT_D16;
 		Params.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
 		Params.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
 
-		if (FAILED(DirectX9Interface::Direct3D9->CreateDeviceEx(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, OverlayWindow::Hwnd, D3DCREATE_HARDWARE_VERTEXPROCESSING, &Params, 0, &DirectX9Interface::pDevice)))
+		if (FAILED(d3d9::m_d3d_context->CreateDeviceEx(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, overlay_window::m_hwnd, D3DCREATE_HARDWARE_VERTEXPROCESSING, &Params, 0, &d3d9::m_d3d_device)))
 		{
-			DirectX9Interface::Direct3D9->Release();
+			d3d9::m_d3d_context->Release();
 			return;
 		}
 
@@ -184,9 +153,18 @@ namespace ellohim
 		ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantTextInput || ImGui::GetIO().WantCaptureKeyboard;
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-		ImGui_ImplWin32_Init(OverlayWindow::Hwnd);
-		ImGui_ImplDX9_Init(DirectX9Interface::pDevice);
-		DirectX9Interface::Direct3D9->Release();
+		ImGui_ImplWin32_Init(overlay_window::m_hwnd);
+		ImGui_ImplDX9_Init(d3d9::m_d3d_device);
+
+		ImFontConfig font_cfg{};
+		font_cfg.FontDataOwnedByAtlas = false;
+		std::strcpy(font_cfg.Name, "Rubik");
+
+		ImGui::GetIO().Fonts->AddFontFromMemoryTTF(const_cast<std::uint8_t*>(font_rubik), sizeof(font_rubik), 14.f, &font_cfg, ImGui::GetIO().Fonts->GetGlyphRangesCyrillic());
+
+		ImGui::GetIO().Fonts->AddFontDefault();
+
+		d3d9::m_d3d_context->Release();
 
 		g_renderer = this;
 	}
@@ -196,21 +174,21 @@ namespace ellohim
 		ImGui_ImplDX9_Shutdown();
 		ImGui_ImplWin32_Shutdown();
 		ImGui::DestroyContext();
-		if (DirectX9Interface::pDevice != NULL)
+		if (d3d9::m_d3d_device != NULL)
 		{
-			DirectX9Interface::pDevice->EndScene();
-			DirectX9Interface::pDevice->Release();
+			d3d9::m_d3d_device->EndScene();
+			d3d9::m_d3d_device->Release();
 		}
-		if (DirectX9Interface::Direct3D9 != NULL)
+		if (d3d9::m_d3d_context != NULL)
 		{
-			DirectX9Interface::Direct3D9->Release();
+			d3d9::m_d3d_context->Release();
 		}
-		DestroyWindow(OverlayWindow::Hwnd);
-		UnregisterClass(OverlayWindow::WindowClass.lpszClassName, OverlayWindow::WindowClass.hInstance);
+		DestroyWindow(overlay_window::m_hwnd);
+		UnregisterClass(overlay_window::m_window_class.lpszClassName, overlay_window::m_window_class.hInstance);
 
 		g_renderer = nullptr;
 	}
-	
+
 	LRESULT CALLBACK renderer::WinProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	{
 		if (ImGui_ImplWin32_WndProcHandler(hWnd, Message, wParam, lParam))
@@ -219,23 +197,25 @@ namespace ellohim
 		switch (Message)
 		{
 		case WM_DESTROY:
-			if (DirectX9Interface::pDevice != NULL) {
-				DirectX9Interface::pDevice->EndScene();
-				DirectX9Interface::pDevice->Release();
+			if (d3d9::m_d3d_device != NULL)
+			{
+				d3d9::m_d3d_device->EndScene();
+				d3d9::m_d3d_device->Release();
 			}
-			if (DirectX9Interface::Direct3D9 != NULL) {
-				DirectX9Interface::Direct3D9->Release();
+			if (d3d9::m_d3d_context != NULL)
+			{
+				d3d9::m_d3d_context->Release();
 			}
 			PostQuitMessage(0);
 			exit(4);
 			break;
 		case WM_SIZE:
-			if (DirectX9Interface::pDevice != NULL && wParam != SIZE_MINIMIZED)
+			if (d3d9::m_d3d_device != NULL && wParam != SIZE_MINIMIZED)
 			{
 				ImGui_ImplDX9_InvalidateDeviceObjects();
-				DirectX9Interface::pParams.BackBufferWidth = LOWORD(lParam);
-				DirectX9Interface::pParams.BackBufferHeight = HIWORD(lParam);
-				HRESULT hr = DirectX9Interface::pDevice->Reset(&DirectX9Interface::pParams);
+				d3d9::m_d3d_params.BackBufferWidth = LOWORD(lParam);
+				d3d9::m_d3d_params.BackBufferHeight = HIWORD(lParam);
+				HRESULT hr = d3d9::m_d3d_device->Reset(&d3d9::m_d3d_params);
 				if (hr == D3DERR_INVALIDCALL)
 					IM_ASSERT(0);
 				ImGui_ImplDX9_CreateDeviceObjects();
@@ -250,44 +230,44 @@ namespace ellohim
 
 	void renderer::setup_window()
 	{
-		OverlayWindow::WindowClass = {
-			sizeof(WNDCLASSEX), 0, WinProc, 0, 0, nullptr, LoadIcon(nullptr, IDI_APPLICATION), LoadCursor(nullptr, IDC_ARROW), nullptr, nullptr, OverlayWindow::Name, LoadIcon(nullptr, IDI_APPLICATION)
+		overlay_window::m_window_class = {
+			sizeof(WNDCLASSEX), 0, WinProc, 0, 0, nullptr, LoadIcon(nullptr, IDI_APPLICATION), LoadCursor(nullptr, IDC_ARROW), nullptr, nullptr, overlay_window::m_name, LoadIcon(nullptr, IDI_APPLICATION)
 		};
 
-		RegisterClassEx(&OverlayWindow::WindowClass);
-		if (Process::Hwnd)
+		RegisterClassEx(&overlay_window::m_window_class);
+		if (window_process::m_hwnd)
 		{
 			static RECT TempRect = { NULL };
 			static POINT TempPoint;
-			GetClientRect(Process::Hwnd, &TempRect);
-			ClientToScreen(Process::Hwnd, &TempPoint);
+			GetClientRect(window_process::m_hwnd, &TempRect);
+			ClientToScreen(window_process::m_hwnd, &TempPoint);
 			TempRect.left = TempPoint.x;
 			TempRect.top = TempPoint.y;
-			Process::WindowWidth = TempRect.right;
-			Process::WindowHeight = TempRect.bottom;
+			window_process::m_screen_resolution.x = TempRect.right;
+			window_process::m_screen_resolution.y = TempRect.bottom;
 		}
 
-		OverlayWindow::Hwnd = CreateWindowEx(NULL, OverlayWindow::Name, OverlayWindow::Name, WS_POPUP | WS_VISIBLE, Process::WindowLeft, Process::WindowTop, Process::WindowWidth, Process::WindowHeight, NULL, NULL, 0, NULL);
-		DwmExtendFrameIntoClientArea(OverlayWindow::Hwnd, &DirectX9Interface::Margin);
-		SetWindowLong(OverlayWindow::Hwnd, GWL_EXSTYLE, WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW);
-		ShowWindow(OverlayWindow::Hwnd, SW_SHOW);
-		UpdateWindow(OverlayWindow::Hwnd);
+		overlay_window::m_hwnd = CreateWindowEx(NULL, overlay_window::m_name, overlay_window::m_name, WS_POPUP | WS_VISIBLE, window_process::m_screen_pos.m_window_left, window_process::m_screen_pos.m_window_top, window_process::m_screen_resolution.x, window_process::m_screen_resolution.y, NULL, NULL, 0, NULL);
+		DwmExtendFrameIntoClientArea(overlay_window::m_hwnd, &d3d9::m_d3d_margin);
+		SetWindowLong(overlay_window::m_hwnd, GWL_EXSTYLE, WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW);
+		ShowWindow(overlay_window::m_hwnd, SW_SHOW);
+		UpdateWindow(overlay_window::m_hwnd);
 	}
 
 	DWORD WINAPI renderer::process_check(LPVOID lpParameter)
 	{
-		if (Process::Hwnd != NULL)
+		if (window_process::m_hwnd != NULL)
 		{
-			if (GetProcessId(TargetProcess) == 0)
+			if (GetProcessId(m_target_process) == 0)
 			{
-				g_running = false;
+				exit(0);
 			}
 		}
 	}
 
-	void renderer::overlay_init()
+	void renderer::init_overlay()
 	{
-		if (CreateConsole == false)
+		if (m_create_console == false)
 			ShowWindow(GetConsoleWindow(), SW_HIDE);
 
 		bool WindowFocus = false;
@@ -295,32 +275,32 @@ namespace ellohim
 		{
 			DWORD ForegroundWindowProcessID;
 			GetWindowThreadProcessId(GetForegroundWindow(), &ForegroundWindowProcessID);
-			if (functions::GetProcessId(TargetProcess) == ForegroundWindowProcessID)
+			if (functions::GetProcessId(m_target_process) == ForegroundWindowProcessID)
 			{
-				Process::ID = GetCurrentProcessId();
-				Process::Handle = GetCurrentProcess();
-				Process::Hwnd = GetForegroundWindow();
+				window_process::m_id = GetCurrentProcessId();
+				window_process::m_handle = GetCurrentProcess();
+				window_process::m_hwnd = GetForegroundWindow();
 
 				RECT TempRect;
-				GetWindowRect(Process::Hwnd, &TempRect);
-				Process::WindowWidth = TempRect.right - TempRect.left;
-				Process::WindowHeight = TempRect.bottom - TempRect.top;
-				Process::WindowLeft = TempRect.left;
-				Process::WindowRight = TempRect.right;
-				Process::WindowTop = TempRect.top;
-				Process::WindowBottom = TempRect.bottom;
+				GetWindowRect(window_process::m_hwnd, &TempRect);
+				window_process::m_screen_resolution.x = TempRect.right - TempRect.left;
+				window_process::m_screen_resolution.y = TempRect.bottom - TempRect.top;
+				window_process::m_screen_pos.m_window_left = TempRect.left;
+				window_process::m_screen_pos.m_window_right = TempRect.right;
+				window_process::m_screen_pos.m_window_top = TempRect.top;
+				window_process::m_screen_pos.m_window_botton = TempRect.bottom;
 
 				char TempTitle[MAX_PATH];
-				GetWindowText(Process::Hwnd, TempTitle, sizeof(TempTitle));
-				Process::Title = TempTitle;
+				GetWindowText(window_process::m_hwnd, TempTitle, sizeof(TempTitle));
+				window_process::m_title = TempTitle;
 
 				char TempClassName[MAX_PATH];
-				GetClassName(Process::Hwnd, TempClassName, sizeof(TempClassName));
-				Process::ClassName = TempClassName;
+				GetClassName(window_process::m_hwnd, TempClassName, sizeof(TempClassName));
+				window_process::m_class_name = TempClassName;
 
 				char TempPath[MAX_PATH];
-				GetModuleFileNameEx(Process::Handle, NULL, TempPath, sizeof(TempPath));
-				Process::Path = TempPath;
+				GetModuleFileNameEx(window_process::m_handle, NULL, TempPath, sizeof(TempPath));
+				window_process::m_path = TempPath;
 
 				WindowFocus = true;
 			}

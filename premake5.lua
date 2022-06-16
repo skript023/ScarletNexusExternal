@@ -130,7 +130,7 @@ workspace "Scarlet Nexus"
     language "C++"
 
     targetdir ("bin/lib/" .. outputdir)
-    objdir ("bin/int/" .. outputdir .. "/%{prj.name}")
+    objdir ("bin/" .. outputdir .. "/%{prj.name}")
 
     PrecompiledHeaderInclude = "common.hpp"
     PrecompiledHeaderSource = "%{prj.name}/src/common.cpp"
