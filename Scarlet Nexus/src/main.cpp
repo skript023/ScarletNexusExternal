@@ -71,6 +71,7 @@ int main()
 
 			Sleep(0);
 		}
+
 		renderer_instance.reset();
 		LOG(INFO) << "Renderer Uninitialized";
 

@@ -66,14 +66,15 @@ namespace ellohim
 
 	void script::fiber_func()
 	{
-		try
+		TRY_CLAUSE
 		{
 			m_func();
 		}
-		catch(std::exception const &ex)
-		{
+			EXCEPT_CLAUSE
+
+			[]() {
 			LOG(INFO) << "Script finished!";
-		}
+		}();
 
 		while (true)
 		{

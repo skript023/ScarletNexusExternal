@@ -3,6 +3,19 @@
 
 namespace ellohim
 {
+	pattern::pattern(std::string name, std::string x) : name(name), m_base_address(g_process->m_base_address)
+	{
+		compile(x);
+		scan();
+		LOG(INFO_TO_FILE) << " Found '" << name << "' " << m_target_process << "+" << std::uppercase << std::hex << (address - m_base_address);
+	}
+
+	pattern::pattern(std::string name_, uintptr_t addr)
+	{
+		name = name_;
+		address = addr;
+	}
+
 	void pattern::compile(const std::string& pat)
 	{
 		int hexchar = 0;

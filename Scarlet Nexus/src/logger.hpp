@@ -16,10 +16,12 @@ namespace ellohim
 	}
 
 	static const int kRawValue = 600;
+	static const int kFileValue = 700;
 
 	const LEVELS
 		RAW_GREEN_TO_CONSOLE{ kRawValue, {"RAW_GREEN_TO_CONSOLE"} },
-		RAW_RED{ kRawValue, {"RAW_RED"} };
+		RAW_RED{ kRawValue, {"RAW_RED"} },
+		INFO_TO_FILE{ kFileValue , {"INFO_TO_FILE"} };
 
 	class logger;
 	inline logger* g_log{};
@@ -159,11 +161,12 @@ namespace ellohim
 				int level_value = log_message._level.value;
 
 				bool is_raw = level_value == RAW_GREEN_TO_CONSOLE.value;
+				bool is_file = level_value == INFO_TO_FILE.value;
 
-				if (g_log->m_console_out.is_open())
+				if (g_log->m_console_out.is_open() && !is_file)
 					g_log->m_console_out << log_message.toString(is_raw ? log_sink::format_raw : log_sink::format_console) << std::flush;
 
-				if (!is_raw)
+				if (!is_raw || is_file)
 					g_log->m_file_out << log.get().toString(log_sink::format_file) << std::flush;
 			}
 
@@ -192,7 +195,7 @@ namespace ellohim
 					<< "[" << msg.timestamp("%H:%M:%S") << "]"
 					<< AddColorToStream(color)
 					<< "[" << msg.level() << "]"
-					<< "[" << msg.file() << "]" << "[" << msg.line() << "]"
+					<< "[" << msg.file() << ":" << msg.line() <<"]"
 					<< ": ";
 
 				return out.str();

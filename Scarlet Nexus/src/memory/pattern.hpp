@@ -10,21 +10,11 @@ namespace ellohim
 		std::vector<std::optional<uint8_t>> compiled;
 		std::string name;
 		uintptr_t   address = 0;
+		uintptr_t   m_base_address = 0;
 
 	public:
-		inline pattern(std::string name, std::string x) :
-			name(name)
-		{
-			compile(x);
-			LOG(INFO) << name << " Found";
-			scan();
-		}
-
-		inline pattern(std::string name_, uintptr_t addr)
-		{
-			name = name_;
-			address = addr;
-		}
+		explicit pattern(std::string name, std::string x);
+		explicit pattern(std::string name_, uintptr_t addr);
 
 		void compile(const std::string& pat);
 
